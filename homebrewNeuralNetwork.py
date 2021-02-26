@@ -3,6 +3,7 @@ from scipy import stats
 import matplotlib.pyplot as plt
 import numpy as np
 import math as m
+from random import shuffle
 
 #layer creation
 class generateLayer():
@@ -11,29 +12,29 @@ class generateLayer():
         self.b = np.round(stats.truncnorm.rvs(-1, 1, loc=0, scale=1, size = nNeurons).reshape(1, nNeurons), 3)
         self.w = np.round(stats.truncnorm.rvs(-1, 1, loc=0, scale=1, size=nNeurons*nNeuronsAnterior).reshape(nNeuronsAnterior, nNeurons), 3)
 
-        
+def mse(Yhat, Ytrue):
+    x = (np.array(Yhat) - np.array(Ytrue)) **2
+    x = np.mean(x)
+    y = np.array(Yhat) - np.array(Ytrue)
+    return(x, y)
+    
 #activation functions
 #sigmoid should take input value and give the function output
-sigmoida = lambda x: m.pow(m.e, x)/(m.pow(m.e, x) + 1)
-b = lambda x: sigmoida(0)*(1 - sigmoida(0))
-sigmoid = (sigmoida, b)
+sigmoid = (
+    lambda x: 1 / (1 + np.exp(-x)),
+    lambda x: (1/(1 + np.exp(-x))) * (1 - (1/(1 + np.exp(-x))))
+    )
 
 #rectified linear unit: relu
-def relu( x ):
-    if x <= 0:
-        return 0
-    elif x > 0:
-        return x
-    else:
-        print('error in relu function')
+def derivativeRelu( x ):
+    x[x<=0] = 0
+    x[x>0] = 1
+    return x
 
-def reluD( x ):
-    if x <= 0:
-        return 0
-    elif x > 0:
-        return 1
-    else:
-        print('error in relu derivative')
+relu = (
+    lambda x: x * (x > 0),
+    lambda x: derivativeRelu(x)
+    )
 
 #simple network
 neurons = [2, 4, 8, 1]
@@ -43,4 +44,18 @@ model = []
 for j in range(len(neurons)-1):
     x = generateLayer(neurons[j], neurons[j+1], activationFunctions[j])
     model.append(x)
-print(model)
+
+output = [np.round(np.random.randn(20,2),3)]
+
+#now try to do a prediction
+for k in range(len(model)):
+    z = output[-1] @ model[k].w + model[k].b
+    act = model[k].activationFunction[0](z)
+    output.append(act)
+#print(output[-1])
+
+Y = [0]*10 + [1]*10
+shuffle(Y)
+Y = np.array(Y).reshape(len(Y),1)
+print(mse(output[-1], Y)[0])
+
