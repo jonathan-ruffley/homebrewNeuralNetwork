@@ -54,8 +54,32 @@ for k in range(len(model)):
     output.append(act)
 #print(output[-1])
 
+#Y here is fake labels, True/False
 Y = [0]*10 + [1]*10
 shuffle(Y)
 Y = np.array(Y).reshape(len(Y),1)
-print(mse(output[-1], Y)[0])
+#print(mse(output[-1], Y)[0])
 
+#backpropagation, gradient descent
+learningRate = 0.01
+invertedIndex = list(range(len(output)-1))
+invertedIndex.reverse()
+errorStorage = []
+
+for layer in invertedIndex:
+    #print(model[-1].b)
+    #print(model[-1].w)
+    tempStorage = output[layer+1][1]
+    if layer == invertedIndex[0]:
+        x = mse(tempStorage, Y)[1] * model[layer].activationFunction[1](tempStorage)
+        errorStorage.append(x)
+    else:
+        x = errorStorage[-1] @ Wtemp * model[layer].activationFunction[1](tempStorage)
+        errorStorage.append(x)
+    Wtemp = model[layer].w.transpose()
+
+    model[layer].b = model[layer].b - errorStorage[-1].mean() * learningRate
+    model[layer].w = model[layer].w - (output[layer].T @ errorStorage[-1])
+
+print('MSE: {0}'.format(str(mse(output[-1], Y)[0])))
+print('Estimation {0}'.format(str(output[-1])))
